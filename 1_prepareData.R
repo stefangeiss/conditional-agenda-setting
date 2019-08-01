@@ -1,3 +1,86 @@
+setwd("c://users//stefange//OneDrive - NTNU//2-Data//GLES2009")
+options(scipen=100)
+set.seed(9349)
+
+	# DATENOPERATIONEN
+
+library(foreign)
+# library(xlsx)
+library(car)
+library(reshape2)
+# library(Hmisc)
+library(Amelia)
+library(matrixStats)
+library(dplyr)
+
+	# GRAPHIK
+
+library(ggplot2)
+# library(sjPlot)
+library(sjmisc)
+library(effects)
+library(gridExtra)
+
+	# STRUCTURAL EQUATIONS
+
+library(lavaan)
+library(lavaan.survey)
+library(semTools)
+library(piecewiseSEM)
+# library(nonnest2)
+
+	# LME4
+
+library(arm)
+library(lme4)
+library(lmerTest)
+# library(LMERConvenienceFunctions)
+# library(sjPlot)
+library(piecewiseSEM)
+library(MCMCglmm)
+
+	# LINEAR MODELS
+
+library(car)
+library(multcomp)
+library(MASS)
+# library(plm)
+library(survey)
+
+	# ANOVA
+
+library(car)
+library(ez)
+library(multcomp)
+
+	# MULTINOMINAL
+
+library(nnet)
+library(MASS)
+library(mlogit)
+# library(mnlogit)
+library(reshape2)
+
+	# FACTOR ANALYSIS
+
+library(nFactors)
+library(psych)
+
+	# CLUSTER ANALYSIS
+
+library(mclust)
+library(poLCA)
+
+	# TIME SERIES
+library(zoo)
+library(forecast)
+library(vars)
+
+	# REPORTING
+library(xtable)
+library(stargazer)
+library(extrafont)
+
 # ------------------------------------------------
 # ------------------------------------------------
 # MANUAL CONTENT ANALYSIS DATA--------------------
@@ -256,10 +339,10 @@ tapply(ma.2013$print,ma.2013$thema,sum))
 # ------------------------------------------------
 
 rcs2013 <- read.spss("./ZA5703_v2-0-0.sav",to.data.frame=TRUE,use.value.labels=FALSE)
-rcs2009 <- read.spss("./ZA5303_v6-0-0_ohneOffeneNennungen.sav",to.data.frame=TRUE,use.value.labels=FALSE)
+rcs2009 <- read.spss("./ZA5303_v6-0-0.sav",to.data.frame=TRUE,use.value.labels=FALSE)
 
 rcs2013F <- read.spss("./ZA5703_v2-0-0.sav",to.data.frame=TRUE,use.value.labels=TRUE)
-rcs2009F <- read.spss("./ZA5303_v6-0-0_ohneOffeneNennungen.sav",to.data.frame=TRUE,use.value.labels=TRUE)
+rcs2009F <- read.spss("./ZA5303_v6-0-0.sav",to.data.frame=TRUE,use.value.labels=TRUE)
 
 allissues <- c(levels(rcs2009F$pre014c1),levels(rcs2013F$pre014c1)[!(levels(rcs2013F$pre014c1) %in% levels(rcs2009F$pre014c1))])
 
@@ -298,46 +381,11 @@ for (j in 1:dim(iss2009)[2])
 
 }
 
-iss2009.1 <- matrix(0,nrow=dim(rcs2009)[1],ncol=length(allissues))
-iss2013.1 <- matrix(0,nrow=dim(rcs2013)[1],ncol=length(allissues))
-
-colnames(iss2009.1) <- allissues
-colnames(iss2013.1) <- allissues
-
 iss2009 <- iss2009/rowSums(iss2009)
 iss2013 <- iss2013/rowSums(iss2013)
 
-for (j in 1:dim(iss2009.1)[2])
-{
-	iss2009.1[,j] <- ifelse(!is.na(rcs2009F$pos012c1),ifelse(rcs2009F$pos012c1==allissues[j],iss2009.1[,j]+1,iss2009.1[,j]),iss2009.1[,j])
-	iss2009.1[,j] <- ifelse(!is.na(rcs2009F$pos012c2),ifelse(rcs2009F$pos012c2==allissues[j],iss2009.1[,j]+1,iss2009.1[,j]),iss2009.1[,j])
-	iss2009.1[,j] <- ifelse(!is.na(rcs2009F$pos012c3),ifelse(rcs2009F$pos012c3==allissues[j],iss2009.1[,j]+1,iss2009.1[,j]),iss2009.1[,j])
-	iss2009.1[,j] <- ifelse(!is.na(rcs2009F$pos012c4),ifelse(rcs2009F$pos012c4==allissues[j],iss2009.1[,j]+1,iss2009.1[,j]),iss2009.1[,j])
-	iss2009.1[,j] <- ifelse(!is.na(rcs2009F$pos012c5),ifelse(rcs2009F$pos012c5==allissues[j],iss2009.1[,j]+1,iss2009.1[,j]),iss2009.1[,j])
-	iss2009.1[,j] <- ifelse(!is.na(rcs2009F$pos014c1),ifelse(rcs2009F$pos014c1==allissues[j],iss2009.1[,j]+0.5,iss2009.1[,j]),iss2009.1[,j])
-	iss2009.1[,j] <- ifelse(!is.na(rcs2009F$pos014c2),ifelse(rcs2009F$pos014c2==allissues[j],iss2009.1[,j]+0.5,iss2009.1[,j]),iss2009.1[,j])
-	iss2009.1[,j] <- ifelse(!is.na(rcs2009F$pos014c3),ifelse(rcs2009F$pos014c3==allissues[j],iss2009.1[,j]+0.5,iss2009.1[,j]),iss2009.1[,j])
-	iss2009.1[,j] <- ifelse(!is.na(rcs2009F$pos014c4),ifelse(rcs2009F$pos014c4==allissues[j],iss2009.1[,j]+0.5,iss2009.1[,j]),iss2009.1[,j])
-
-	iss2013.1[,j] <- ifelse(!is.na(rcs2013F$pos011c1),ifelse(rcs2013F$pos011c1==allissues[j],iss2013.1[,j]+1,iss2013.1[,j]),iss2013.1[,j])
-	iss2013.1[,j] <- ifelse(!is.na(rcs2013F$pos011c2),ifelse(rcs2013F$pos011c2==allissues[j],iss2013.1[,j]+1,iss2013.1[,j]),iss2013.1[,j])
-	iss2013.1[,j] <- ifelse(!is.na(rcs2013F$pos011c3),ifelse(rcs2013F$pos011c3==allissues[j],iss2013.1[,j]+1,iss2013.1[,j]),iss2013.1[,j])
-	iss2013.1[,j] <- ifelse(!is.na(rcs2013F$pos011c4),ifelse(rcs2013F$pos011c4==allissues[j],iss2013.1[,j]+1,iss2013.1[,j]),iss2013.1[,j])
-	iss2013.1[,j] <- ifelse(!is.na(rcs2013F$pos011c5),ifelse(rcs2013F$pos011c5==allissues[j],iss2013.1[,j]+1,iss2013.1[,j]),iss2013.1[,j])
-	iss2013.1[,j] <- ifelse(!is.na(rcs2013F$pos013c1),ifelse(rcs2013F$pos013c1==allissues[j],iss2013.1[,j]+0.5,iss2013.1[,j]),iss2013.1[,j])
-	iss2013.1[,j] <- ifelse(!is.na(rcs2013F$pos013c2),ifelse(rcs2013F$pos013c2==allissues[j],iss2013.1[,j]+0.5,iss2013.1[,j]),iss2013.1[,j])
-	iss2013.1[,j] <- ifelse(!is.na(rcs2013F$pos013c3),ifelse(rcs2013F$pos013c3==allissues[j],iss2013.1[,j]+0.5,iss2013.1[,j]),iss2013.1[,j])
-	iss2013.1[,j] <- ifelse(!is.na(rcs2013F$pos013c4),ifelse(rcs2013F$pos013c4==allissues[j],iss2013.1[,j]+0.5,iss2013.1[,j]),iss2013.1[,j])
-	iss2013.1[,j] <- ifelse(!is.na(rcs2013F$pos013c5),ifelse(rcs2013F$pos013c5==allissues[j],iss2013.1[,j]+0.5,iss2013.1[,j]),iss2013.1[,j])
-
-}
-
-iss2013.1 <- iss2013.1/rowSums(iss2013.1)
-
 Xiss2009 <- data.frame(iss2009)
-Xiss2009.1 <- data.frame(iss2009.1)
 Xiss2013 <- data.frame(iss2013)
-Xiss2013.1 <- data.frame(iss2013.1)
 
 bildung <- c(207,208,209,210,212,214,215,324,325,326,327)
 energie <- c(104,105,106,110,111,295,296,297,298)
@@ -371,7 +419,7 @@ umwelt <- c(116:118,121:123,303:305)
 klima <- c(119:120)
 verteidigung <- c(278,280,75,76,78,81)
 wahl <- c(17,18,19,250,251)
-w䨲ung <- c(204,205,332,333)
+waehrung <- c(204,205,332,333)
 wirtschaft <- c(170,184,193,197:200,202,206,321,323)
 banken <- c(189:192)
 krise <- c(185:187,195,196,334,335,188)
@@ -414,47 +462,10 @@ Xiss2009$umwelt 		<- rowSums(Xiss2009[,umwelt])
 Xiss2009$klima 		<- rowSums(Xiss2009[,klima])
 Xiss2009$verteidigung 	<- rowSums(Xiss2009[,verteidigung])
 Xiss2009$wahl 		<- rowSums(Xiss2009[,wahl])
-Xiss2009$w䨲ung 		<- rowSums(Xiss2009[,w䨲ung])
+Xiss2009$waehrung 		<- rowSums(Xiss2009[,waehrung])
 Xiss2009$wirtschaft 	<- rowSums(Xiss2009[,wirtschaft])
 Xiss2009$banken 		<- rowSums(Xiss2009[,banken])
 Xiss2009$krise 		<- rowSums(Xiss2009[,krise])
-
-Xiss2009.1$bildung 		<- rowSums(Xiss2009.1[,bildung])
-Xiss2009.1$energie 		<- rowSums(Xiss2009.1[,energie])
-Xiss2009.1$atom 		<- rowSums(Xiss2009.1[,atom])
-Xiss2009.1$EU 			<- rowSums(Xiss2009.1[,EU])
-Xiss2009.1$foederalismus 	<- rowSums(Xiss2009.1[,foederalismus])
-Xiss2009.1$gesundheit 	<- rowSums(Xiss2009.1[,gesundheit])
-Xiss2009.1$haushalt 		<- rowSums(Xiss2009.1[,haushalt])
-Xiss2009.1$ausgaben 		<- rowSums(Xiss2009.1[,ausgaben])
-Xiss2009.1$einnahmen 	<- rowSums(Xiss2009.1[,einnahmen])
-Xiss2009.1$infrastruktur 	<- rowSums(Xiss2009.1[,infrastruktur])
-Xiss2009.1$inneres 		<- rowSums(Xiss2009.1[,inneres])
-Xiss2009.1$extremismus 	<- rowSums(Xiss2009.1[,extremismus])
-Xiss2009.1$geheimdienste 	<- rowSums(Xiss2009.1[,geheimdienste])
-Xiss2009.1$kriminalitaet 	<- rowSums(Xiss2009.1[,kriminalitaet])
-Xiss2009.1$internationales <- rowSums(Xiss2009.1[,internationales])
-Xiss2009.1$int.konfl 	<- rowSums(Xiss2009.1[,int.konfl])
-Xiss2009.1$int.terror 	<- rowSums(Xiss2009.1[,int.terror])
-Xiss2009.1$internet 		<- rowSums(Xiss2009.1[,internet])
-Xiss2009.1$migration 	<- rowSums(Xiss2009.1[,migration])
-Xiss2009.1$verdrossenheit 	<- rowSums(Xiss2009.1[,verdrossenheit])
-Xiss2009.1$sonstiges 	<- rowSums(Xiss2009.1[,sonstiges])
-Xiss2009.1$sozial 		<- rowSums(Xiss2009.1[,sozial])
-Xiss2009.1$arbeit 		<- rowSums(Xiss2009.1[,arbeit])
-Xiss2009.1$demographie 	<- rowSums(Xiss2009.1[,demographie])
-Xiss2009.1$einkommen 	<- rowSums(Xiss2009.1[,einkommen])
-Xiss2009.1$familie 		<- rowSums(Xiss2009.1[,familie])
-Xiss2009.1$rente 		<- rowSums(Xiss2009.1[,rente])
-Xiss2009.1$wohnen 		<- rowSums(Xiss2009.1[,wohnen])
-Xiss2009.1$umwelt 		<- rowSums(Xiss2009.1[,umwelt])
-Xiss2009.1$klima 		<- rowSums(Xiss2009.1[,klima])
-Xiss2009.1$verteidigung 	<- rowSums(Xiss2009.1[,verteidigung])
-Xiss2009.1$wahl 		<- rowSums(Xiss2009.1[,wahl])
-Xiss2009.1$w䨲ung 		<- rowSums(Xiss2009.1[,w䨲ung])
-Xiss2009.1$wirtschaft 	<- rowSums(Xiss2009.1[,wirtschaft])
-Xiss2009.1$banken 		<- rowSums(Xiss2009.1[,banken])
-Xiss2009.1$krise 		<- rowSums(Xiss2009.1[,krise])
 
 Xiss2013$bildung 		<- rowSums(Xiss2013[,bildung])
 Xiss2013$energie 		<- rowSums(Xiss2013[,energie])
@@ -488,70 +499,39 @@ Xiss2013$umwelt 		<- rowSums(Xiss2013[,umwelt])
 Xiss2013$klima 		<- rowSums(Xiss2013[,klima])
 Xiss2013$verteidigung 	<- rowSums(Xiss2013[,verteidigung])
 Xiss2013$wahl 		<- rowSums(Xiss2013[,wahl])
-Xiss2013$w䨲ung 		<- rowSums(Xiss2013[,w䨲ung])
+Xiss2013$waehrung 		<- rowSums(Xiss2013[,waehrung])
 Xiss2013$wirtschaft 	<- rowSums(Xiss2013[,wirtschaft])
 Xiss2013$banken 		<- rowSums(Xiss2013[,banken])
 Xiss2013$krise 		<- rowSums(Xiss2013[,krise])
-
-Xiss2013.1$bildung 		<- rowSums(Xiss2013.1[,bildung])
-Xiss2013.1$energie 		<- rowSums(Xiss2013.1[,energie])
-Xiss2013.1$atom 		<- rowSums(Xiss2013.1[,atom])
-Xiss2013.1$EU 			<- rowSums(Xiss2013.1[,EU])
-Xiss2013.1$foederalismus 	<- rowSums(Xiss2013.1[,foederalismus])
-Xiss2013.1$gesundheit 	<- rowSums(Xiss2013.1[,gesundheit])
-Xiss2013.1$haushalt 		<- rowSums(Xiss2013.1[,haushalt])
-Xiss2013.1$ausgaben 		<- rowSums(Xiss2013.1[,ausgaben])
-Xiss2013.1$einnahmen 	<- rowSums(Xiss2013.1[,einnahmen])
-Xiss2013.1$infrastruktur 	<- rowSums(Xiss2013.1[,infrastruktur])
-Xiss2013.1$inneres 		<- rowSums(Xiss2013.1[,inneres])
-Xiss2013.1$extremismus 	<- rowSums(Xiss2013.1[,extremismus])
-Xiss2013.1$geheimdienste 	<- rowSums(Xiss2013.1[,geheimdienste])
-Xiss2013.1$kriminalitaet 	<- rowSums(Xiss2013.1[,kriminalitaet])
-Xiss2013.1$internationales <- rowSums(Xiss2013.1[,internationales])
-Xiss2013.1$int.konfl 	<- rowSums(Xiss2013.1[,int.konfl])
-Xiss2013.1$int.terror 	<- rowSums(Xiss2013.1[,int.terror])
-Xiss2013.1$internet 		<- rowSums(Xiss2013.1[,internet])
-Xiss2013.1$migration 	<- rowSums(Xiss2013.1[,migration])
-Xiss2013.1$verdrossenheit 	<- rowSums(Xiss2013.1[,verdrossenheit])
-Xiss2013.1$sonstiges 	<- rowSums(Xiss2013.1[,sonstiges])
-Xiss2013.1$sozial 		<- rowSums(Xiss2013.1[,sozial])
-Xiss2013.1$arbeit 		<- rowSums(Xiss2013.1[,arbeit])
-Xiss2013.1$demographie 	<- rowSums(Xiss2013.1[,demographie])
-Xiss2013.1$einkommen 	<- rowSums(Xiss2013.1[,einkommen])
-Xiss2013.1$familie 		<- rowSums(Xiss2013.1[,familie])
-Xiss2013.1$rente 		<- rowSums(Xiss2013.1[,rente])
-Xiss2013.1$wohnen 		<- rowSums(Xiss2013.1[,wohnen])
-Xiss2013.1$umwelt 		<- rowSums(Xiss2013.1[,umwelt])
-Xiss2013.1$klima 		<- rowSums(Xiss2013.1[,klima])
-Xiss2013.1$verteidigung 	<- rowSums(Xiss2013.1[,verteidigung])
-Xiss2013.1$wahl 		<- rowSums(Xiss2013.1[,wahl])
-Xiss2013.1$w䨲ung 		<- rowSums(Xiss2013.1[,w䨲ung])
-Xiss2013.1$wirtschaft 	<- rowSums(Xiss2013.1[,wirtschaft])
-Xiss2013.1$banken 		<- rowSums(Xiss2013.1[,banken])
-Xiss2013.1$krise 		<- rowSums(Xiss2013.1[,krise])
 
 year <- trunc(rcs2009$pre_datum/10000)+2000
 mon <- trunc((rcs2009$pre_datum-90000)/100)
 day <- rcs2009$pre_datum-90000-mon*100
 datum <- as.Date(paste0(day,".",mon,".",year),format="%d.%m.%Y")
 rcstag <- rcs2009$pre_tag
-df.iss2009 <- data.frame(ID=rcs2009$lfdn,date=datum,rcsday=rcstag,Xiss2009[,340:374],Xiss2009.1[,340:374])
+df.iss2009 <- data.frame(ID=rcs2009$lfdn,date=datum,rcsday=rcstag,Xiss2009[,340:374])
 
 datum <- as.Date(rcs2013$pre_datum/86400,origin="1582-10-15")
 rcstag <- rcs2013$pre_tag
-df.iss2013 <- data.frame(ID=rcs2013$lfdn,date=datum,rcsday=rcstag,Xiss2013[,340:374],Xiss2013.1[,340:374])
+df.iss2013 <- data.frame(ID=rcs2013$lfdn,date=datum,rcsday=rcstag,Xiss2013[,340:374])
 
-df.iss2009 <- data.frame(iss2009,ID=rcs2009$lfdn)
-df.iss2013 <- data.frame(iss2013,ID=rcs2013$lfdn)
+#df.iss2009 <- data.frame(iss2009,ID=rcs2009$lfdn)
+#df.iss2013 <- data.frame(iss2013,ID=rcs2013$lfdn)
+
+df.iss2009$wt <- rcs2009$wei_soz1w
+df.iss2013$wt <- rcs2013$w_soz1w
+
+cc.iss2009 <- subset(df.iss2009,rowSums(iss2009)>0)
+cc.iss2013 <- subset(df.iss2013,rowSums(iss2013)>0)
+
+cc.iss2009$doy <- strptime((cc.iss2009$date),"%Y-%m-%d")$yday
+cc.iss2013$doy <- strptime((cc.iss2013$date),"%Y-%m-%d")$yday
 
 gg.iss <- data.frame(pub=c(colSums(cc.iss2009[,4:38]),
-	colSums(cc.iss2009[39:73]),
-	colSums(cc.iss2013[,4:38]),
-	colSums(cc.iss2013[39:73])),
-		issue=rep(names(cc.iss2009)[4:38],times=4),
-		year=c(rep(2009,times=70),rep(2013,times=70)),
-		wave=c(rep(1,times=35),rep(2,times=35),
-			rep(1,times=35),rep(2,times=35)) )
+	colSums(cc.iss2013[,4:38])))
+gg.iss$issue <- rep(names(cc.iss2009)[4:38],times=2)
+gg.iss$year <- c(rep(2009,times=35),rep(2013,times=35))
+gg.iss$wave=c(rep(1,times=35),rep(1,times=35))
 
 gg.iss$YEAR <- factor(gg.iss$year)
 gg.iss$WAVE <- factor(gg.iss$wave)
@@ -563,17 +543,17 @@ ggi.rcs <- data.frame(doy=rep(NA,times=2100),day=rep(NA,times=2100),issue=rep(NA
 ggi.rcs.13 <- data.frame(doy=rep(NA,times=2660),day=rep(NA,times=2660),issue=rep(NA,times=2660),
 			attention=rep(NA,times=2660))
 
-cc.iss2009$doy <- strptime(cc.iss2009$date,"%Y-%m-%d")$yday
-cc.iss2013$doy <- strptime(cc.iss2013$date,"%Y-%m-%d")$yday
+cc.iss2009$rcsday <- cc.iss2009$doy-min(cc.iss2009$doy)+1
+cc.iss2013$rcsday <- cc.iss2013$doy-min(cc.iss2013$doy)+1
 
 
-wt <- cc.iss2009$wt
+# wt <- cc.iss2009$wt
 
-x <- aggregate(cc.iss2009[,4:38],by=list(cc.iss2009$rcsday),FUN=wtd.mean,weights=cc.iss2009$wt,normwt=T)
-y <- x[,2:36]/rowSums(x[,2:36])
+# x <- aggregate(cc.iss2009[,4:38],by=list(cc.iss2009$rcsday),FUN=wtd.mean,weights=cc.iss2009$wt,normwt=T)
+# y <- x[,2:36]/rowSums(x[,2:36])
 
-xx <- aggregate(cc.iss2013[,4:38],by=list(cc.iss2013$rcsday),FUN="mean")
-yy <- xx[,2:36]/rowSums(xx[,2:36])
+# xx <- aggregate(cc.iss2013[,4:38],by=list(cc.iss2013$rcsday),FUN="mean")
+# yy <- xx[,2:36]/rowSums(xx[,2:36])
 
 
 for (i in 4:38)
@@ -596,22 +576,9 @@ i.rcs[,"doy"] <- as.numeric(rownames(tapply(cc.iss2013[,i],cc.iss2013$doy,mean))
 ggi.rcs.13 <- rbind(ggi.rcs.13,i.rcs)
 }
 
-for (i in 4:38)
-{
-i.rcs <- data.frame(doy=rep(NA,times=62),day=rep(NA,times=62),issue=rep(NA,times=62),attention=rep(NA,times=62))
-i.rcs[,"day"] <- rownames(tapply(cc.iss2017[,i],cc.iss2017$rcsday,mean))
-i.rcs[,"attention"] <- tapply(cc.iss2017[,i],cc.iss2017$rcsday,mean)
-i.rcs[,"issue"] <- colnames(cc.iss2017)[i]
-i.rcs[,"doy"] <- as.numeric(rownames(tapply(cc.iss2017[,i],cc.iss2017$rcsday,mean)))
-ggi.rcs.17 <- rbind(ggi.rcs.17,i.rcs)
-}
-
 ggi.rcs <- ggi.rcs[2101:4200,]
 
 ggi.rcs.13 <- ggi.rcs.13[2661:5320,]
-
-ggi.rcs.17 <- ggi.rcs.17[2171:4340,]
-ggi.rcs.17$day <- ggi.rcs.17$doy-204
 
 ### Create SELECTOR for only those day--issue combinations for which there is both content analysis and public opinion data
 
@@ -621,8 +588,6 @@ gg.2009.index <- which(paste(ggi.rcs$issue,ggi.rcs$doy)%in%paste(ma.2009$thema,m
 ma.2013.index <- which(paste(ma.2013$thema,ma.2013$doy)%in%paste(ggi.rcs.13$issue,ggi.rcs.13$doy))
 gg.2013.index <- which(paste(ggi.rcs.13$issue,ggi.rcs.13$doy)%in%paste(ma.2013$thema,ma.2013$doy))
 
-ma.2017.index <- which(paste(ma.2017$thema,ma.2017$doy)%in%paste(ggi.rcs.17$issue,ggi.rcs.17$doy))
-gg.2017.index <- which(paste(ggi.rcs.17$issue,ggi.rcs.17$doy)%in%paste(ma.2017$thema,ma.2017$doy))
 
 dat.2009 <- data.frame(	doy=ggi.rcs$doy[gg.2009.index],
 				public=ggi.rcs$attention[gg.2009.index],
@@ -635,107 +600,6 @@ dat.2013 <- data.frame(	doy=ggi.rcs.13$doy[gg.2013.index],
 				thema=ggi.rcs.13$issue[gg.2013.index],
 				tvr=as.numeric(ma.2013$tv[ma.2013.index]),
 				prr=as.numeric(ma.2013$print[ma.2013.index]))
-
-dat.2017 <- data.frame(	doy=ggi.rcs.17$doy[gg.2017.index],
-				public=ggi.rcs.17$attention[gg.2017.index],
-				thema=ggi.rcs.17$issue[gg.2017.index],
-				tvr=ma.2017$tv[ma.2017.index],
-				prr=ma.2017$print[ma.2017.index])
-
-##### PREPARE TIME SERIES FOR ANALYSIS
-
-
-#
-#
-#
-#
-# Kalman Filterung
-
-for (i in 1:29)
-{
-x <- subset(dat.2009,thema==issue[i])$public
-y <- StructTS(x,type="BSM")$fit[,1]
-y <- rollmean(x,k=7,align=center)
-}
-
-dat.2009$thema <- relevel(dat.2009$thema,ref="kriminalitaet")
-
-#
-#
-#
-#
-# Auto-ARIMA Cleaning
-
-data.2009 <- dat.2009
-
-data.2009 <- subset(dat.2009,!is.na(public))
-
-data.2009$tv <- replace(data.2009$tv,is.na(data.2009$tv),0)
-
-data.2013 <- dat.2013
-
-data.2013 <- subset(dat.2013,!is.na(public))
-
-data.2013$tv <- replace(data.2013$tv,is.na(data.2013$tv),0)
-
-for (i in 1:length(issue))
-{
-if (issue[i] %in% dat.2009$thema){
-	data.2009[data.2009$thema==issue[i],"public"] <- na.approx(data.2009[data.2009$thema==issue[i],"public"])
-	data.2009[data.2009$thema==issue[i],"public"] <- na.approx(Arima(data.2009[data.2009$thema==issue[i],"public"],order=c(0,1,5))$res,rule=2)
-	}
-}
-
-
-for (i in 1:length(issue))
-{
-if (issue[i] %in% dat.2009$thema){
-	data.2009[data.2009$thema==issue[i],"public"] <- na.approx(data.2009[data.2009$thema==issue[i],"public"])
-	data.2009[data.2009$thema==issue[i],"public"] <- na.approx(auto.arima(data.2009[data.2009$thema==issue[i],"public"],start.q=5,stepwise=F,approximation=F)$res,rule=2)
-	}
-}
-
-for (i in 1:length(issue))
-{
-if (issue[i] %in% dat.2009$thema){
-	data.2009[data.2009$thema==issue[i],"pr"] <- na.approx(data.2009[data.2009$thema==issue[i],"pr"])
-	data.2009[data.2009$thema==issue[i],"pr"] <- na.approx(auto.arima(data.2009[data.2009$thema==issue[i],"pr"])$res,rule=2)
-	}
-}
-
-for (i in 1:length(issue))
-{
-if (issue[i] %in% dat.2009$thema){
-	data.2009[data.2009$thema==issue[i],"tv"] <- na.approx(data.2009[data.2009$thema==issue[i],"tv"])
-	data.2009[data.2009$thema==issue[i],"tv"] <- na.approx(auto.arima(data.2009[data.2009$thema==issue[i],"tv"])$res,rule=2)
-	}
-}
-
-
-for (i in 1:length(issue))
-{
-if (issue[i] %in% dat.2013$thema){
-	data.2013[data.2013$thema==issue[i],"public"] <- na.approx(data.2013[data.2013$thema==issue[i],"public"])
-	data.2013[data.2013$thema==issue[i],"public"] <- na.approx(auto.arima(data.2013[data.2013$thema==issue[i],"public"])$res,rule=2)
-	}
-}
-
-for (i in 1:length(issue))
-{
-if (issue[i] %in% dat.2013$thema){
-	data.2013[data.2013$thema==issue[i],"pr"] <- na.approx(data.2013[data.2013$thema==issue[i],"pr"])
-	data.2013[data.2013$thema==issue[i],"pr"] <- na.approx(auto.arima(data.2013[data.2013$thema==issue[i],"pr"])$res,rule=2)
-	}
-}
-
-for (i in 1:length(issue))
-{
-if (issue[i] %in% dat.2013$thema){
-	data.2013[data.2013$thema==issue[i],"tv"] <- na.approx(data.2013[data.2013$thema==issue[i],"tv"])
-	data.2013[data.2013$thema==issue[i],"tv"] <- na.approx(auto.arima(data.2013[data.2013$thema==issue[i],"tv"])$res,rule=2)
-	}
-}
-
 
 
 
@@ -750,10 +614,6 @@ if (issue[i] %in% dat.2013$thema){
 tvag <- tapply(dat.2009$tv,dat.2009$thema,sum,na.rm=T)
 
 prag <- tapply(dat.2009$pr,dat.2009$thema,sum,na.rm=T)
-
-
-
-
 
 
 
