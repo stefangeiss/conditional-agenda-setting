@@ -1,24 +1,14 @@
 
-df.iss2009$wt <- rcs2009$wei_soz1w
-df.iss2013$wt <- rcs2013$w_soz1w
-df.iss2017$wt <- rcs2017$w_soz1w
-cc.iss2009 <- subset(df.iss2009,rowSums(iss2009)>0)
-cc.iss2013 <- subset(df.iss2013,rowSums(iss2013)>0)
-cc.iss2017 <- subset(df.iss2017,rowSums(iss2017)>0)
-
 tspublic2009 <- list()
 tspublic2013 <- list()
-tspublic2017 <- list()
 
 for (i in 4:38)
 {
 tspublic2009[[names(cc.iss2009)[i]]] <- tapply(cc.iss2009[,i]/rowSums(cc.iss2009[,4:38])*cc.iss2009$wt,cc.iss2009$rcsday,mean,na.rm=T)
 tspublic2013[[names(cc.iss2013)[i]]] <- tapply(cc.iss2013[,i]/rowSums(cc.iss2013[,4:38])*cc.iss2013$wt,cc.iss2013$rcsday,mean,na.rm=T)
-tspublic2017[[names(cc.iss2017)[i]]] <- tapply(cc.iss2017[,i]/rowSums(cc.iss2017[,4:38])*cc.iss2017$wt,cc.iss2017$rcsday,mean,na.rm=T)
 }
 
 dat.2013$tvr <- as.numeric(dat.2013$tvr)
-dat.2013$prr <- as.numeric(levels(dat.2013$prr))
 dat.2013$prr <- ifelse(is.na(dat.2013$prr),0,dat.2013$prr)
 
 dat <- list()
@@ -41,26 +31,15 @@ dat[["2013"]][["newspaper"]][[themen[i]]] <- subset(dat.2013,thema==themen[i])[,
 
 for (i in 1:length(themen))
 {
-dat[["2017"]][["public"]][[themen[i]]] <- data.frame(doy=subset(dat.2017,thema==themen[i])$doy,raw=tspublic2017[[themen[i]]][1:62])
-dat[["2017"]][["tv"]][[themen[i]]] <- subset(dat.2017,thema==themen[i])[,c("doy","tvr")]
-dat[["2017"]][["newspaper"]][[themen[i]]] <- subset(dat.2017,thema==themen[i])[,c("doy","prr")]
-}
-
-
-for (i in 1:length(themen))
-{
 names(dat[["2009"]][["public"]][[themen[i]]])[2] <- "raw"
 names(dat[["2009"]][["tv"]][[themen[i]]])[2] <- "raw"
 names(dat[["2009"]][["newspaper"]][[themen[i]]])[2] <- "raw"
 names(dat[["2013"]][["public"]][[themen[i]]])[2] <- "raw"
 names(dat[["2013"]][["tv"]][[themen[i]]])[2] <- "raw"
 names(dat[["2013"]][["newspaper"]][[themen[i]]])[2] <- "raw"
-names(dat[["2017"]][["public"]][[themen[i]]])[2] <- "raw"
-names(dat[["2017"]][["tv"]][[themen[i]]])[2] <- "raw"
-names(dat[["2017"]][["newspaper"]][[themen[i]]])[2] <- "raw"
 }
 
-years <- c("2009","2013","2017")
+years <- c("2009","2013")
 agenda <- c("public","tv","newspaper")
 themen <- levels(dat.2013$thema)
 
