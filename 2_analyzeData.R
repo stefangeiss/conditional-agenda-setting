@@ -15,6 +15,8 @@ dat <- list()
 
 themen <- levels(dat.2013$thema)
 
+themenfull <- c(1:28)[c(-9,-16,-18,-19,-23,-28)]
+
 for (i in 1:length(themen))
 {
 dat[["2009"]][["public"]][[themen[i]]] <- data.frame(doy=subset(dat.2009,thema==themen[i])$doy,raw=tspublic2009[[themen[i]]])
@@ -93,11 +95,6 @@ themenag <- c("verdrossenheit","geheimdienste","verteidigung","int.konfl",
 	"extremismus","inneres","EU","arbeit","einkommen","familie","wirtschaft",
 	"rente","energie","migration","haushalt","bildung")
 
-x <- cbind(tvsum09[themenag,],npsum09[themenag,],round(pmean09[themenag,],2),round(pmax09[themenag,],2),
-	tvsum13[themenag,],npsum13[themenag,],round(pmean13[themenag,],2),round(pmax13[themenag,],2))
-
-print(xtable(x),type="html")
-
 rownames(tvsum09)[2:23] <- themen[themenfull]
 rownames(tvsum13)[2:23] <- themen[themenfull]
 rownames(npsum09)[2:23] <- themen[themenfull]
@@ -107,34 +104,88 @@ rownames(pmean13)[2:23] <- themen[themenfull]
 rownames(pmax09)[2:23] <- themen[themenfull]
 rownames(pmax13)[2:23] <- themen[themenfull]
 
+x <- cbind(tvsum09[themenag,],npsum09[themenag,],round(pmean09[themenag,],2),round(pmax09[themenag,],2),
+	tvsum13[themenag,],npsum13[themenag,],round(pmean13[themenag,],2),round(pmax13[themenag,],2))
+
+print(xtable(x),type="html")
+
 issues <- themen[themenfull]
 
 agenda.media <- c("tv-public","np-public")
 agenda.public <- c("public-tv","public-np")
 
-for (y in 1:length(years[1:2]))
+varresults <- list()
+grangerresults <- data.frame(year=rep(years,each=length(themen)*6),issue=rep(themen,times=18),cause=rep(rep(c("public","tv","publictv","public","np","publicnp"),each=28),times=3),mediaagenda=rep(rep(c("tv","tv","tv","np","np","np"),each=28),times=3),pvalue=NA,maxfit=NA,minfit=NA)
+irfresults <- list()
+
+for (y in 1:length(years))
 {
-for (a in 1:length(agenda[2:3]))
-{
-for (i in 1:length(issues))
-{
-selector <- fulleff$issue==issues[i]&fulleff$agenda==agenda[a+1]&fulleff$year==years[y]
-fulleff[selector,"lag.media.max"] <- which.max(irfresults[[years[y]]][[issues[i]]][[agenda.media[a]]]$fit)-1
-fulleff[selector,"lag.public.max"] <- which.max(irfresults[[years[y]]][[issues[i]]][[agenda.public[a]]]$fit)-1
-fulleff[selector,"lag.media.min"] <- which.min(irfresults[[years[y]]][[issues[i]]][[agenda.media[a]]]$fit)-1
-fulleff[selector,"lag.public.min"] <- which.min(irfresults[[years[y]]][[issues[i]]][[agenda.public[a]]]$fit)-1
+	for (t in themenfull)
+	{
+	tryCatch({
+		pu <- na.approx(dat[[y]][["public"]][[t]]$rollmean5)
+		tv <- na.approx(dat[[y]][["tv"]][[t]]$rollmean5)
+		np <- na.approx(dat[[y]][["newspaper"]][[t]]$rollmean5)
+	var.pu.tv <- VAR(data.frame(public=pu/max(pu),tv=tv/max(tv)),p=14)
+	var.pu.np <- VAR(data.frame(public=pu/max(pu),np=np/max(np)),p=14)
+
+	varresults[[years[y]]][[themen[t]]][["public-tv"]] <- var.pu.tv
+	varresults[[years[y]]][[themen[t]]][["public-np"]] <- var.pu.np
+
+	grangerresults[grangerresults$year==years[y]&grangerresults$issue==themen[t]&grangerresults$cause=="public"&grangerresults$mediaagenda=="tv",]$pvalue <- as.numeric(causality(var.pu.tv,cause="public")$Granger$p.value)
+	grangerresults[grangerresults$year==years[y]&grangerresults$issue==themen[t]&grangerresults$cause=="tv"&grangerresults$mediaagenda=="tv",]$pvalue <- as.numeric(causality(var.pu.tv,cause="tv")$Granger$p.value)
+	grangerresults[grangerresults$year==years[y]&grangerresults$issue==themen[t]&grangerresults$cause=="publictv"&grangerresults$mediaagenda=="tv",]$pvalue <- as.numeric(causality(var.pu.tv,cause="public")$Instant$p.value)
+	grangerresults[grangerresults$year==years[y]&grangerresults$issue==themen[t]&grangerresults$cause=="public"&grangerresults$mediaagenda=="np",]$pvalue <- as.numeric(causality(var.pu.np,cause="public")$Granger$p.value)
+	grangerresults[grangerresults$year==years[y]&grangerresults$issue==themen[t]&grangerresults$cause=="np"&grangerresults$mediaagenda=="np",]$pvalue <- as.numeric(causality(var.pu.np,cause="np")$Granger$p.value)
+	grangerresults[grangerresults$year==years[y]&grangerresults$issue==themen[t]&grangerresults$cause=="publicnp"&grangerresults$mediaagenda=="np",]$pvalue <- as.numeric(causality(var.pu.np,cause="public")$Instant$p.value)
+
+		pu <- na.approx(dat[[y]][["public"]][[t]]$arima110)
+		tv <- na.approx(dat[[y]][["tv"]][[t]]$arima110)
+		np <- na.approx(dat[[y]][["newspaper"]][[t]]$arima110)
+	var.pu.tv <- VAR(data.frame(public=pu/max(pu),tv=tv/max(tv)),p=14)
+	var.pu.np <- VAR(data.frame(public=pu/max(pu),np=np/max(np)),p=14)
+
+	varresults[[years[y]]][[themen[t]]][["public-tv"]] <- var.pu.tv
+	varresults[[years[y]]][[themen[t]]][["public-np"]] <- var.pu.np
+
+	irf.ptv <- irf(var.pu.tv,impulse="public",response="tv",cumulative=T,boot=T,runs=100,ortho=T,seed=9349,n.ahead=14)
+	irf.tvp <- irf(var.pu.tv,impulse="tv",response="public",cumulative=T,boot=T,runs=100,ortho=T,seed=9349,n.ahead=14)
+	irf.pnp <- irf(var.pu.np,impulse="public",response="np",cumulative=T,boot=T,runs=100,ortho=T,seed=9349,n.ahead=14)
+	irf.npp <- irf(var.pu.np,impulse="np",response="public",cumulative=T,boot=T,runs=100,ortho=T,seed=9349,n.ahead=14)
+
+	irfresults[[years[y]]][[themen[t]]][["public-tv"]]$fit	<- irf.ptv[[1]]$public
+	irfresults[[years[y]]][[themen[t]]][["public-tv"]]$lower	<- irf.ptv[[2]]$public
+	irfresults[[years[y]]][[themen[t]]][["public-tv"]]$upper	<- irf.ptv[[3]]$public
+	irfresults[[years[y]]][[themen[t]]][["tv-public"]]$fit	<- irf.tvp[[1]]$tv
+	irfresults[[years[y]]][[themen[t]]][["tv-public"]]$lower	<- irf.tvp[[2]]$tv
+	irfresults[[years[y]]][[themen[t]]][["tv-public"]]$upper	<- irf.tvp[[3]]$tv
+	irfresults[[years[y]]][[themen[t]]][["public-np"]]$fit	<- irf.pnp[[1]]$public
+	irfresults[[years[y]]][[themen[t]]][["public-np"]]$lower	<- irf.pnp[[2]]$public
+	irfresults[[years[y]]][[themen[t]]][["public-np"]]$upper	<- irf.pnp[[3]]$public
+	irfresults[[years[y]]][[themen[t]]][["np-public"]]$fit	<- irf.npp[[1]]$np
+	irfresults[[years[y]]][[themen[t]]][["np-public"]]$lower	<- irf.npp[[2]]$np
+	irfresults[[years[y]]][[themen[t]]][["np-public"]]$upper	<- irf.npp[[3]]$np
+
+	grangerresults[grangerresults$year==years[y]&grangerresults$issue==themen[t]&grangerresults$cause=="public"&grangerresults$mediaagenda=="tv","maxfit"] <- max(irfresults[[years[y]]][[themen[t]]][["public-tv"]]$fit)
+	grangerresults[grangerresults$year==years[y]&grangerresults$issue==themen[t]&grangerresults$cause=="tv"&grangerresults$mediaagenda=="tv","maxfit"] <- max(irfresults[[years[y]]][[themen[t]]][["tv-public"]]$fit)
+	grangerresults[grangerresults$year==years[y]&grangerresults$issue==themen[t]&grangerresults$cause=="public"&grangerresults$mediaagenda=="np","maxfit"] <- max(irfresults[[years[y]]][[themen[t]]][["public-np"]]$fit)
+	grangerresults[grangerresults$year==years[y]&grangerresults$issue==themen[t]&grangerresults$cause=="np"&grangerresults$mediaagenda=="np","maxfit"] <- max(irfresults[[years[y]]][[themen[t]]][["np-public"]]$fit)
+	grangerresults[grangerresults$year==years[y]&grangerresults$issue==themen[t]&grangerresults$cause=="publicnp"&grangerresults$mediaagenda=="np","maxfit"] <- max(irfresults[[years[y]]][[themen[t]]][["np-public"]]$fit)
+	grangerresults[grangerresults$year==years[y]&grangerresults$issue==themen[t]&grangerresults$cause=="publictv"&grangerresults$mediaagenda=="tv","maxfit"] <- max(irfresults[[years[y]]][[themen[t]]][["tv-public"]]$fit)
+
+	grangerresults[grangerresults$year==years[y]&grangerresults$issue==themen[t]&grangerresults$cause=="public"&grangerresults$mediaagenda=="tv","minfit"] <- min(irfresults[[years[y]]][[themen[t]]][["public-tv"]]$fit)
+	grangerresults[grangerresults$year==years[y]&grangerresults$issue==themen[t]&grangerresults$cause=="tv"&grangerresults$mediaagenda=="tv","minfit"] <- min(irfresults[[years[y]]][[themen[t]]][["tv-public"]]$fit)
+	grangerresults[grangerresults$year==years[y]&grangerresults$issue==themen[t]&grangerresults$cause=="public"&grangerresults$mediaagenda=="np","minfit"] <- min(irfresults[[years[y]]][[themen[t]]][["public-np"]]$fit)
+	grangerresults[grangerresults$year==years[y]&grangerresults$issue==themen[t]&grangerresults$cause=="np"&grangerresults$mediaagenda=="np","minfit"] <- min(irfresults[[years[y]]][[themen[t]]][["np-public"]]$fit)
+	grangerresults[grangerresults$year==years[y]&grangerresults$issue==themen[t]&grangerresults$cause=="publicnp"&grangerresults$mediaagenda=="np","minfit"] <- min(irfresults[[years[y]]][[themen[t]]][["np-public"]]$fit)
+	grangerresults[grangerresults$year==years[y]&grangerresults$issue==themen[t]&grangerresults$cause=="publictv"&grangerresults$mediaagenda=="tv","minfit"] <- min(irfresults[[years[y]]][[themen[t]]][["tv-public"]]$fit)
+	print(c(years[y],themen[t]))
+	Sys.sleep(0.01)
+	flush.console()
+	})
+	}
 }
-}
-}
 
-
-
-
-
-ggplot()+
-	geom_line(data=dat[[3]][[1]][[8]],aes(y=rollmean5*30,x=doy),color="blue")+
-	geom_line(data=dat[[3]][[2]][[8]],aes(y=rollmean5,x=doy),color="red")+
-	geom_line(data=dat[[3]][[3]][[8]],aes(y=rollmean5,x=doy),color="orange")
 
 irf.int.konfl <- data.frame(irfresults[["2009"]][["int.konfl"]][["tv-public"]])
 irf.int.konflr <- data.frame(irfresults[["2009"]][["int.konfl"]][["public-tv"]])
@@ -204,175 +255,8 @@ ggsave(tsdemo,file="tsdemo.jpg",dpi=1200,unit="cm",width=16,height=16,scale=1.25
 ggsave(tsdemo,file="tsdemo.pdf",dpi=1200,unit="cm",width=16,height=16,scale=1.25)
 ggsave(tsdemo,file="tsdemo.png",dpi=1200,unit="cm",width=16,height=16,scale=1.25)
 
-varresults <- list()
-grangerresults <- data.frame(year=rep(years,each=length(themen)*6),issue=rep(themen,times=18),cause=rep(rep(c("public","tv","publictv","public","np","publicnp"),each=28),times=3),mediaagenda=rep(rep(c("tv","tv","tv","np","np","np"),each=28),times=3),pvalue=NA,maxfit=NA,minfit=NA)
-irfresults <- list()
-
-themenfull <- c(1:28)[c(-9,-16,-18,-19,-23,-28)]
-
-for (y in 1:length(years))
-{
-	for (t in themenfull)
-	{
-	tryCatch({
-		pu <- na.approx(dat[[y]][["public"]][[t]]$rollmean5)
-		tv <- na.approx(dat[[y]][["tv"]][[t]]$rollmean5)
-		np <- na.approx(dat[[y]][["newspaper"]][[t]]$rollmean5)
-	var.pu.tv <- VAR(data.frame(public=pu/max(pu),tv=tv/max(tv)),p=14)
-	var.pu.np <- VAR(data.frame(public=pu/max(pu),np=np/max(np)),p=14)
-
-	varresults[[years[y]]][[themen[t]]][["public-tv"]] <- var.pu.tv
-	varresults[[years[y]]][[themen[t]]][["public-np"]] <- var.pu.np
-
-	grangerresults[grangerresults$year==years[y]&grangerresults$issue==themen[t]&grangerresults$cause=="public"&grangerresults$mediaagenda=="tv",]$pvalue <- as.numeric(causality(var.pu.tv,cause="public")$Granger$p.value)
-	grangerresults[grangerresults$year==years[y]&grangerresults$issue==themen[t]&grangerresults$cause=="tv"&grangerresults$mediaagenda=="tv",]$pvalue <- as.numeric(causality(var.pu.tv,cause="tv")$Granger$p.value)
-	grangerresults[grangerresults$year==years[y]&grangerresults$issue==themen[t]&grangerresults$cause=="publictv"&grangerresults$mediaagenda=="tv",]$pvalue <- as.numeric(causality(var.pu.tv,cause="public")$Instant$p.value)
-	grangerresults[grangerresults$year==years[y]&grangerresults$issue==themen[t]&grangerresults$cause=="public"&grangerresults$mediaagenda=="np",]$pvalue <- as.numeric(causality(var.pu.np,cause="public")$Granger$p.value)
-	grangerresults[grangerresults$year==years[y]&grangerresults$issue==themen[t]&grangerresults$cause=="np"&grangerresults$mediaagenda=="np",]$pvalue <- as.numeric(causality(var.pu.np,cause="np")$Granger$p.value)
-	grangerresults[grangerresults$year==years[y]&grangerresults$issue==themen[t]&grangerresults$cause=="publicnp"&grangerresults$mediaagenda=="np",]$pvalue <- as.numeric(causality(var.pu.np,cause="public")$Instant$p.value)
-
-		pu <- na.approx(dat[[y]][["public"]][[t]]$arima110)
-		tv <- na.approx(dat[[y]][["tv"]][[t]]$arima110)
-		np <- na.approx(dat[[y]][["newspaper"]][[t]]$arima110)
-	var.pu.tv <- VAR(data.frame(public=pu/max(pu),tv=tv/max(tv)),p=14)
-	var.pu.np <- VAR(data.frame(public=pu/max(pu),np=np/max(np)),p=14)
-
-	varresults[[years[y]]][[themen[t]]][["public-tv"]] <- var.pu.tv
-	varresults[[years[y]]][[themen[t]]][["public-np"]] <- var.pu.np
-
-	irf.ptv <- irf(var.pu.tv,impulse="public",response="tv",cumulative=T,boot=T,runs=100,ortho=T,seed=9349,n.ahead=14)
-	irf.tvp <- irf(var.pu.tv,impulse="tv",response="public",cumulative=T,boot=T,runs=100,ortho=T,seed=9349,n.ahead=14)
-	irf.pnp <- irf(var.pu.np,impulse="public",response="np",cumulative=T,boot=T,runs=100,ortho=T,seed=9349,n.ahead=14)
-	irf.npp <- irf(var.pu.np,impulse="np",response="public",cumulative=T,boot=T,runs=100,ortho=T,seed=9349,n.ahead=14)
-
-	irfresults[[years[y]]][[themen[t]]][["public-tv"]]$fit	<- irf.ptv[[1]]$public
-	irfresults[[years[y]]][[themen[t]]][["public-tv"]]$lower	<- irf.ptv[[2]]$public
-	irfresults[[years[y]]][[themen[t]]][["public-tv"]]$upper	<- irf.ptv[[3]]$public
-	irfresults[[years[y]]][[themen[t]]][["tv-public"]]$fit	<- irf.tvp[[1]]$tv
-	irfresults[[years[y]]][[themen[t]]][["tv-public"]]$lower	<- irf.tvp[[2]]$tv
-	irfresults[[years[y]]][[themen[t]]][["tv-public"]]$upper	<- irf.tvp[[3]]$tv
-	irfresults[[years[y]]][[themen[t]]][["public-np"]]$fit	<- irf.pnp[[1]]$public
-	irfresults[[years[y]]][[themen[t]]][["public-np"]]$lower	<- irf.pnp[[2]]$public
-	irfresults[[years[y]]][[themen[t]]][["public-np"]]$upper	<- irf.pnp[[3]]$public
-	irfresults[[years[y]]][[themen[t]]][["np-public"]]$fit	<- irf.npp[[1]]$np
-	irfresults[[years[y]]][[themen[t]]][["np-public"]]$lower	<- irf.npp[[2]]$np
-	irfresults[[years[y]]][[themen[t]]][["np-public"]]$upper	<- irf.npp[[3]]$np
-
-	grangerresults[grangerresults$year==years[y]&grangerresults$issue==themen[t]&grangerresults$cause=="public"&grangerresults$mediaagenda=="tv","maxfit"] <- max(irfresults[[years[y]]][[themen[t]]][["public-tv"]]$fit)
-	grangerresults[grangerresults$year==years[y]&grangerresults$issue==themen[t]&grangerresults$cause=="tv"&grangerresults$mediaagenda=="tv","maxfit"] <- max(irfresults[[years[y]]][[themen[t]]][["tv-public"]]$fit)
-	grangerresults[grangerresults$year==years[y]&grangerresults$issue==themen[t]&grangerresults$cause=="public"&grangerresults$mediaagenda=="np","maxfit"] <- max(irfresults[[years[y]]][[themen[t]]][["public-np"]]$fit)
-	grangerresults[grangerresults$year==years[y]&grangerresults$issue==themen[t]&grangerresults$cause=="np"&grangerresults$mediaagenda=="np","maxfit"] <- max(irfresults[[years[y]]][[themen[t]]][["np-public"]]$fit)
-	grangerresults[grangerresults$year==years[y]&grangerresults$issue==themen[t]&grangerresults$cause=="publicnp"&grangerresults$mediaagenda=="np","maxfit"] <- max(irfresults[[years[y]]][[themen[t]]][["np-public"]]$fit)
-	grangerresults[grangerresults$year==years[y]&grangerresults$issue==themen[t]&grangerresults$cause=="publictv"&grangerresults$mediaagenda=="tv","maxfit"] <- max(irfresults[[years[y]]][[themen[t]]][["tv-public"]]$fit)
-
-	grangerresults[grangerresults$year==years[y]&grangerresults$issue==themen[t]&grangerresults$cause=="public"&grangerresults$mediaagenda=="tv","minfit"] <- min(irfresults[[years[y]]][[themen[t]]][["public-tv"]]$fit)
-	grangerresults[grangerresults$year==years[y]&grangerresults$issue==themen[t]&grangerresults$cause=="tv"&grangerresults$mediaagenda=="tv","minfit"] <- min(irfresults[[years[y]]][[themen[t]]][["tv-public"]]$fit)
-	grangerresults[grangerresults$year==years[y]&grangerresults$issue==themen[t]&grangerresults$cause=="public"&grangerresults$mediaagenda=="np","minfit"] <- min(irfresults[[years[y]]][[themen[t]]][["public-np"]]$fit)
-	grangerresults[grangerresults$year==years[y]&grangerresults$issue==themen[t]&grangerresults$cause=="np"&grangerresults$mediaagenda=="np","minfit"] <- min(irfresults[[years[y]]][[themen[t]]][["np-public"]]$fit)
-	grangerresults[grangerresults$year==years[y]&grangerresults$issue==themen[t]&grangerresults$cause=="publicnp"&grangerresults$mediaagenda=="np","minfit"] <- min(irfresults[[years[y]]][[themen[t]]][["np-public"]]$fit)
-	grangerresults[grangerresults$year==years[y]&grangerresults$issue==themen[t]&grangerresults$cause=="publictv"&grangerresults$mediaagenda=="tv","minfit"] <- min(irfresults[[years[y]]][[themen[t]]][["tv-public"]]$fit)
-	print(c(years[y],themen[t]))
-	Sys.sleep(0.01)
-	flush.console()
-	})
-	}
-}
-
-	for (t in themenfull[10:22])
-	{
-	tryCatch({
-		pu <- na.approx(dat[[y]][["public"]][[t]]$rollmean5)
-		tv <- na.approx(dat[[y]][["tv"]][[t]]$rollmean5)
-		np <- na.approx(dat[[y]][["newspaper"]][[t]]$rollmean5)
-	var.pu.tv <- VAR(data.frame(public=pu/max(pu),tv=tv/max(tv)),p=14)
-	var.pu.np <- VAR(data.frame(public=pu/max(pu),np=np/max(np)),p=14)
-
-	varresults[[years[y]]][[themen[t]]][["public-tv"]] <- var.pu.tv
-	varresults[[years[y]]][[themen[t]]][["public-np"]] <- var.pu.np
-
-	grangerresults[grangerresults$year==years[y]&grangerresults$issue==themen[t]&grangerresults$cause=="public"&grangerresults$mediaagenda=="tv",]$pvalue <- as.numeric(causality(var.pu.tv,cause="public")$Granger$p.value)
-	grangerresults[grangerresults$year==years[y]&grangerresults$issue==themen[t]&grangerresults$cause=="tv"&grangerresults$mediaagenda=="tv",]$pvalue <- as.numeric(causality(var.pu.tv,cause="tv")$Granger$p.value)
-	grangerresults[grangerresults$year==years[y]&grangerresults$issue==themen[t]&grangerresults$cause=="publictv"&grangerresults$mediaagenda=="tv",]$pvalue <- as.numeric(causality(var.pu.tv,cause="public")$Instant$p.value)
-	grangerresults[grangerresults$year==years[y]&grangerresults$issue==themen[t]&grangerresults$cause=="public"&grangerresults$mediaagenda=="np",]$pvalue <- as.numeric(causality(var.pu.np,cause="public")$Granger$p.value)
-	grangerresults[grangerresults$year==years[y]&grangerresults$issue==themen[t]&grangerresults$cause=="np"&grangerresults$mediaagenda=="np",]$pvalue <- as.numeric(causality(var.pu.np,cause="np")$Granger$p.value)
-	grangerresults[grangerresults$year==years[y]&grangerresults$issue==themen[t]&grangerresults$cause=="publicnp"&grangerresults$mediaagenda=="np",]$pvalue <- as.numeric(causality(var.pu.np,cause="public")$Instant$p.value)
-
-		pu <- na.approx(dat[[y]][["public"]][[t]]$arima110)
-		tv <- na.approx(dat[[y]][["tv"]][[t]]$arima110)
-		np <- na.approx(dat[[y]][["newspaper"]][[t]]$arima110)
-	var.pu.tv <- VAR(data.frame(public=pu/max(pu),tv=tv/max(tv)),p=14)
-	var.pu.np <- VAR(data.frame(public=pu/max(pu),np=np/max(np)),p=14)
-
-	varresults[[years[y]]][[themen[t]]][["public-tv"]] <- var.pu.tv
-	varresults[[years[y]]][[themen[t]]][["public-np"]] <- var.pu.np
-
-	irf.ptv <- irf(var.pu.tv,impulse="public",response="tv",cumulative=T,boot=T,runs=100,ortho=T,n.ahead=14,seed=9349)
-	irf.tvp <- irf(var.pu.tv,impulse="tv",response="public",cumulative=T,boot=T,runs=100,ortho=T,n.ahead=14,seed=9349)
-	irf.pnp <- irf(var.pu.np,impulse="public",response="np",cumulative=T,boot=T,runs=100,ortho=T,n.ahead=14,seed=9349)
-	irf.npp <- irf(var.pu.np,impulse="np",response="public",cumulative=T,boot=T,runs=100,ortho=T,n.ahead=14,seed=9349)
-
-	irfresults[[years[y]]][[themen[t]]][["public-tv"]]$fit	<- irf.ptv[[1]]$public
-	irfresults[[years[y]]][[themen[t]]][["public-tv"]]$lower	<- irf.ptv[[2]]$public
-	irfresults[[years[y]]][[themen[t]]][["public-tv"]]$upper	<- irf.ptv[[3]]$public
-	irfresults[[years[y]]][[themen[t]]][["tv-public"]]$fit	<- irf.tvp[[1]]$tv
-	irfresults[[years[y]]][[themen[t]]][["tv-public"]]$lower	<- irf.tvp[[2]]$tv
-	irfresults[[years[y]]][[themen[t]]][["tv-public"]]$upper	<- irf.tvp[[3]]$tv
-	irfresults[[years[y]]][[themen[t]]][["public-np"]]$fit	<- irf.pnp[[1]]$public
-	irfresults[[years[y]]][[themen[t]]][["public-np"]]$lower	<- irf.pnp[[2]]$public
-	irfresults[[years[y]]][[themen[t]]][["public-np"]]$upper	<- irf.pnp[[3]]$public
-	irfresults[[years[y]]][[themen[t]]][["np-public"]]$fit	<- irf.npp[[1]]$np
-	irfresults[[years[y]]][[themen[t]]][["np-public"]]$lower	<- irf.npp[[2]]$np
-	irfresults[[years[y]]][[themen[t]]][["np-public"]]$upper	<- irf.npp[[3]]$np
-
-	grangerresults[grangerresults$year==years[y]&grangerresults$issue==themen[t]&grangerresults$cause=="public"&grangerresults$mediaagenda=="tv","maxfit"] <- max(irfresults[[years[y]]][[themen[t]]][["public-tv"]]$fit)
-	grangerresults[grangerresults$year==years[y]&grangerresults$issue==themen[t]&grangerresults$cause=="tv"&grangerresults$mediaagenda=="tv","maxfit"] <- max(irfresults[[years[y]]][[themen[t]]][["tv-public"]]$fit)
-	grangerresults[grangerresults$year==years[y]&grangerresults$issue==themen[t]&grangerresults$cause=="public"&grangerresults$mediaagenda=="np","maxfit"] <- max(irfresults[[years[y]]][[themen[t]]][["public-np"]]$fit)
-	grangerresults[grangerresults$year==years[y]&grangerresults$issue==themen[t]&grangerresults$cause=="np"&grangerresults$mediaagenda=="np","maxfit"] <- max(irfresults[[years[y]]][[themen[t]]][["np-public"]]$fit)
-	grangerresults[grangerresults$year==years[y]&grangerresults$issue==themen[t]&grangerresults$cause=="publicnp"&grangerresults$mediaagenda=="np","maxfit"] <- max(irfresults[[years[y]]][[themen[t]]][["np-public"]]$fit)
-	grangerresults[grangerresults$year==years[y]&grangerresults$issue==themen[t]&grangerresults$cause=="publictv"&grangerresults$mediaagenda=="tv","maxfit"] <- max(irfresults[[years[y]]][[themen[t]]][["tv-public"]]$fit)
-
-	grangerresults[grangerresults$year==years[y]&grangerresults$issue==themen[t]&grangerresults$cause=="public"&grangerresults$mediaagenda=="tv","minfit"] <- min(irfresults[[years[y]]][[themen[t]]][["public-tv"]]$fit)
-	grangerresults[grangerresults$year==years[y]&grangerresults$issue==themen[t]&grangerresults$cause=="tv"&grangerresults$mediaagenda=="tv","minfit"] <- min(irfresults[[years[y]]][[themen[t]]][["tv-public"]]$fit)
-	grangerresults[grangerresults$year==years[y]&grangerresults$issue==themen[t]&grangerresults$cause=="public"&grangerresults$mediaagenda=="np","minfit"] <- min(irfresults[[years[y]]][[themen[t]]][["public-np"]]$fit)
-	grangerresults[grangerresults$year==years[y]&grangerresults$issue==themen[t]&grangerresults$cause=="np"&grangerresults$mediaagenda=="np","minfit"] <- min(irfresults[[years[y]]][[themen[t]]][["np-public"]]$fit)
-	grangerresults[grangerresults$year==years[y]&grangerresults$issue==themen[t]&grangerresults$cause=="publicnp"&grangerresults$mediaagenda=="np","minfit"] <- min(irfresults[[years[y]]][[themen[t]]][["np-public"]]$fit)
-	grangerresults[grangerresults$year==years[y]&grangerresults$issue==themen[t]&grangerresults$cause=="publictv"&grangerresults$mediaagenda=="tv","minfit"] <- min(irfresults[[years[y]]][[themen[t]]][["tv-public"]]$fit)
-	print(c(years[y],themen[t]))
-	Sys.sleep(0.01)
-	flush.console()
-	})
-	}
 
 
-for (y in 1:length(years))
-{
-	for (t in themenfull)
-	{		
-	pu <- na.approx(dat[[y]][["public"]][[t]]$arima110)
-	tv <- na.approx(dat[[y]][["tv"]][[t]]$arima110)
-	np <- na.approx(dat[[y]][["newspaper"]][[t]]$arima110)
-		
-	var.pu.tv <- VAR(data.frame(public=pu/max(pu),tv=tv/max(tv)),p=14)
-	var.pu.np <- VAR(data.frame(public=pu/max(pu),np=np/max(np)),p=14)
-
-	irf.ptv <- irf(var.pu.tv,impulse="public",response="tv",cumulative=T,boot=T,runs=100,ortho=T,seed=9349,n.ahead=14)
-	irf.tvp <- irf(var.pu.tv,impulse="tv",response="public",cumulative=T,boot=T,runs=100,ortho=T,seed=9349,n.ahead=14)
-	irf.pnp <- irf(var.pu.np,impulse="public",response="np",cumulative=T,boot=T,runs=100,ortho=T,seed=9349,n.ahead=14)
-	irf.npp <- irf(var.pu.np,impulse="np",response="public",cumulative=T,boot=T,runs=100,ortho=T,seed=9349,n.ahead=14)
-
-	irfresults[[years[y]]][[themen[t]]][["public-tv"]]$fit	<- irf.ptv[[1]]$public
-	irfresults[[years[y]]][[themen[t]]][["public-tv"]]$lower	<- irf.ptv[[2]]$public
-	irfresults[[years[y]]][[themen[t]]][["public-tv"]]$upper	<- irf.ptv[[3]]$public
-	irfresults[[years[y]]][[themen[t]]][["tv-public"]]$fit	<- irf.tvp[[1]]$tv
-	irfresults[[years[y]]][[themen[t]]][["tv-public"]]$lower	<- irf.tvp[[2]]$tv
-	irfresults[[years[y]]][[themen[t]]][["tv-public"]]$upper	<- irf.tvp[[3]]$tv
-	irfresults[[years[y]]][[themen[t]]][["public-np"]]$fit	<- irf.pnp[[1]]$public
-	irfresults[[years[y]]][[themen[t]]][["public-np"]]$lower	<- irf.pnp[[2]]$public
-	irfresults[[years[y]]][[themen[t]]][["public-np"]]$upper	<- irf.pnp[[3]]$public
-	irfresults[[years[y]]][[themen[t]]][["np-public"]]$fit	<- irf.npp[[1]]$np
-	irfresults[[years[y]]][[themen[t]]][["np-public"]]$lower	<- irf.npp[[2]]$np
-	irfresults[[years[y]]][[themen[t]]][["np-public"]]$upper	<- irf.npp[[3]]$np
-}}
 
 
 events <- data.frame(issue=rep(themen,times=9),year=rep(years,each=84),agenda=rep(rep(agenda,each=28),times=length(years)))
@@ -461,6 +345,7 @@ table(table(granger0913$pvalue<.05 & granger0913$mpi!="public" & granger0913$pos
 
 table(tapply(subset(grangerresults,!is.na(pvalue))$pvalue<.10,interaction(subset(grangerresults,!is.na(pvalue))$issue,subset(grangerresults,!is.na(pvalue))$year,subset(grangerresults,!is.na(pvalue))$mediaagenda),sum,na.rm=T))
 table(tapply(subset(grangerresults,!is.na(pvalue))$pvalue<.05,interaction(subset(grangerresults,!is.na(pvalue))$issue,subset(grangerresults,!is.na(pvalue))$year,subset(grangerresults,!is.na(pvalue))$mediaagenda),sum,na.rm=T))
+
 
 TABLE.A6 <- grangerresults[,c("year","issue","mediaagenda","cause","pvalue","maxfit","minfit")]
 
@@ -600,6 +485,22 @@ fulleff$iyear <- interaction(fulleff$year,fulleff$issue)
 fulleff2 <- subset(fulleff,year=="2009"|year=="2013")
 
 fulleff2$constantvariable <- c(1)
+
+
+for (y in 1:length(years[1:2]))
+{
+for (a in 1:length(agenda[2:3]))
+{
+for (i in 1:length(issues))
+{
+selector <- fulleff$issue==issues[i]&fulleff$agenda==agenda[a+1]&fulleff$year==years[y]
+fulleff[selector,"lag.media.max"] <- which.max(irfresults[[years[y]]][[issues[i]]][[agenda.media[a]]]$fit)-1
+fulleff[selector,"lag.public.max"] <- which.max(irfresults[[years[y]]][[issues[i]]][[agenda.public[a]]]$fit)-1
+fulleff[selector,"lag.media.min"] <- which.min(irfresults[[years[y]]][[issues[i]]][[agenda.media[a]]]$fit)-1
+fulleff[selector,"lag.public.min"] <- which.min(irfresults[[years[y]]][[issues[i]]][[agenda.public[a]]]$fit)-1
+}
+}
+}
 
 
 possig.X <- glmer(possig01~constantvariable+(1|issue)+(1|agenda)+(1|year),family=binomial,data=fulleff2,seed=9349)
