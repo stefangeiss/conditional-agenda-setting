@@ -115,7 +115,7 @@ agenda.media <- c("tv-public","np-public")
 agenda.public <- c("public-tv","public-np")
 
 varresults <- list()
-grangerresults <- data.frame(year=rep(years,each=length(themen)*6),issue=rep(themen,times=18),cause=rep(rep(c("public","tv","publictv","public","np","publicnp"),each=28),times=3),mediaagenda=rep(rep(c("tv","tv","tv","np","np","np"),each=28),times=3),pvalue=NA,maxfit=NA,minfit=NA)
+grangerresults <- data.frame(year=rep(years,each=length(themen)*6),issue=rep(themen,times=12),cause=rep(rep(c("public","tv","publictv","public","np","publicnp"),each=28),times=3),mediaagenda=rep(rep(c("tv","tv","tv","np","np","np"),each=28),times=3),pvalue=NA,maxfit=NA,minfit=NA)
 irfresults <- list()
 
 for (y in 1:length(years))
